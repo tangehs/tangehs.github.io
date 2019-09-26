@@ -229,6 +229,143 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/09/25/Java对象池/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/09/25/Java对象池/" itemprop="url">Java对象池</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-09-25T20:44:24+08:00">
+                2019-09-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="Java对象池"><a href="#Java对象池" class="headerlink" title="Java对象池"></a>Java对象池</h1><h2 id="1-为什么用对象池"><a href="#1-为什么用对象池" class="headerlink" title="1.为什么用对象池"></a>1.为什么用对象池</h2><p>​        Java中，对象的生命周期包括了对象创建、对象使用、对象消失三个阶段。</p>
+<p>​        对象使用指的是对象真正存活的时间，这是不可避免的，但对象创建和对象消失却是可以控制的。对象的创建是需要一定的时间，构造对象和数组之类要消耗时间的。对象消失则需要运用到Java的Garbage Collector进行对象回收。所以我们需要对对象监控每一个运行状态，包括引用，赋值等。注意：在进行Full GC的时候，会暂停其他操作，会独占CPU。因此，需要我们控制对象的创建数量，也不要轻易让对象消失，使其复用充分。</p>
+<h2 id="2-对象池"><a href="#2-对象池" class="headerlink" title="2.对象池"></a>2.对象池</h2><p>​        对象池，本身是一个集合，里面包含了我们需要的对象集合，这些对象都被对象池所管理，当我们需要使用这样的对象的时候，从对象池里取就行了，但是，还得继续归还回去。当然，对象池的对象应该选取创建比较费时的大对象，如果对象过于简单，则进入池化的时间成本比自己构建还多，就得不偿失了</p>
+<h2 id="3-对象池的使用"><a href="#3-对象池的使用" class="headerlink" title="3.对象池的使用"></a>3.对象池的使用</h2><p>​        使用条件：</p>
+<blockquote>
+<p>创建对象的成本较大，且创建比较频繁，比如线程的创建</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ObjectPoolFactory</span> </span>&#123;</span><br><span class="line">	<span class="comment">//定义一个对象池，前面是对象名，后面是实际对象</span></span><br><span class="line">	<span class="keyword">private</span> Map&lt;String,Object&gt; objectPool = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">	<span class="comment">//定义一个创建对象的方法</span></span><br><span class="line">	<span class="comment">// 该方法只有一个参数类名，程序可以根据类名生成java对象</span></span><br><span class="line">	 <span class="function"><span class="keyword">private</span> Object <span class="title">createObject</span><span class="params">(String clazzName)</span> <span class="keyword">throws</span> InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException </span>&#123;</span><br><span class="line">	 	<span class="comment">//根据类名获取类</span></span><br><span class="line">		 Class&lt;?&gt; clazz = Class.forName(clazzName);</span><br><span class="line">		 <span class="comment">//创建类对象</span></span><br><span class="line">		 <span class="keyword">return</span> clazz.getDeclaredConstructor().newInstance();</span><br><span class="line">		 <span class="comment">//return clazz.newInstance();</span></span><br><span class="line">		 &#125;</span><br><span class="line">	 <span class="function"><span class="keyword">public</span> Object <span class="title">getObject</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">	 	<span class="comment">//从objectPool中取出指定name对应的对象</span></span><br><span class="line">		 <span class="keyword">return</span> objectPool.get(name);</span><br><span class="line">	 	&#125;</span><br><span class="line">	 <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">initPool</span><span class="params">(String fileName)</span> <span class="keyword">throws</span> FileNotFoundException, IOException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException </span>&#123;</span><br><span class="line">	 	<span class="keyword">try</span> (</span><br><span class="line">	 			FileInputStream fis = <span class="keyword">new</span> FileInputStream(fileName);      )&#123;</span><br><span class="line">	 			Properties props = <span class="keyword">new</span> Properties();</span><br><span class="line">	 			props.load(fis);</span><br><span class="line">	 			<span class="keyword">for</span>(String name : props.stringPropertyNames()) &#123;</span><br><span class="line">	 				<span class="comment">//每取一对KEY-VALUE对，就根据value创建一个对象</span></span><br><span class="line">					<span class="comment">// 调用createObject()创建对象，并将对象放入对象池中</span></span><br><span class="line">					<span class="comment">// 此处取得的是：key:a,value:类Date的对象</span></span><br><span class="line">					<span class="comment">//         key:b,value:类JFrame的对象</span></span><br><span class="line">					objectPool.put(name, createObject(props.getProperty(name)));</span><br><span class="line">	 			&#125;</span><br><span class="line">	 	&#125;</span><br><span class="line">	 &#125;</span><br><span class="line">	 <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> FileNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException, IOException </span>&#123;</span><br><span class="line">	 	ObjectPoolFactory pf = <span class="keyword">new</span> ObjectPoolFactory();</span><br><span class="line">	 	pf.initPool(<span class="string">"/Java0223/src/com/dbs/demo05/obj.txt"</span>);</span><br><span class="line">	 	System.out.println(pf.getObject(<span class="string">"a"</span>));</span><br><span class="line">	 	System.out.println(pf.getObject(<span class="string">"b"</span>));&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>​    这是一个简单的初始化对象池的实例，从obj.txt读取类名，首先初始化一个对象池，然后将读取到的类名实例化，放在对象池中。</p>
+<h2 id="4-对象池弊端"><a href="#4-对象池弊端" class="headerlink" title="4.对象池弊端"></a>4.对象池弊端</h2><h3 id="脏对象问题"><a href="#脏对象问题" class="headerlink" title="脏对象问题"></a>脏对象问题</h3><p>​        脏对象指的是对象被放回对象池后，还保留刚刚被客户端调用时生成的数据。</p>
+<p>​        脏对象的潜在问题:</p>
+<blockquote>
+<p>脏对象持有上次使用的引用，导致内存泄漏等问题</p>
+<p>脏对象如果在下一次使用未做清理，可能会影响程序的处理数据</p>
+</blockquote>
+<h3 id="生命周期的问题"><a href="#生命周期的问题" class="headerlink" title="生命周期的问题"></a>生命周期的问题</h3><p>​         处于对象池中对象生命周期要比普通对象长久，维持大量的对象比较占用内存空间</p>
+<h3 id="异常问题"><a href="#异常问题" class="headerlink" title="异常问题"></a>异常问题</h3><p>​        需要我们对请求可能出现的阻塞，异常或null值进行处理，此外还有同步问题，以及池大小的设置问题。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/09/25/数值分析学习1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -839,7 +976,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
@@ -852,7 +989,7 @@
               
               <div class="site-state-item site-state-tags">
                 
-                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-count">3</span>
                   <span class="site-state-item-name">tags</span>
                 
               </div>
